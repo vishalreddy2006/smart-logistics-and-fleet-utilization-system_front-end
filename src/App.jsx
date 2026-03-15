@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar.jsx';
 import HeaderBar from './components/HeaderBar.jsx';
 import LoginPage from './pages/LoginPage.jsx';
@@ -37,12 +37,12 @@ function ProtectedLayout() {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         <Route path="/" element={<LoginPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/*" element={<ProtectedLayout />} />
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
