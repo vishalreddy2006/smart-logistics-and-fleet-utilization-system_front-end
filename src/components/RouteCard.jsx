@@ -1,9 +1,9 @@
 import React from 'react';
 
 const ROUTE_CONFIG = {
-  'Eco Route': { colorClass: 'route-eco', icon: '🌿', tagline: 'Best for carbon savings' },
-  'Express Route': { colorClass: 'route-express', icon: '⚡', tagline: 'Fastest arrival time' },
-  'Urban Route': { colorClass: 'route-urban', icon: '🏙️', tagline: 'Through city network' },
+  'Eco Route':      { colorClass: 'route-eco',     icon: '🌿', tagline: 'Least fuel & emissions' },
+  'Express Route':  { colorClass: 'route-express',  icon: '⚡', tagline: 'Fastest arrival time' },
+  'Balanced Route': { colorClass: 'route-urban',    icon: '⚖️', tagline: 'Best overall balance' },
 };
 
 export default function RouteCard({ route, isRecommended }) {
@@ -15,9 +15,7 @@ export default function RouteCard({ route, isRecommended }) {
 
   return (
     <div className={`route-card ${cfg.colorClass} ${isRecommended ? 'route-recommended' : ''}`}>
-      {isRecommended && (
-        <div className="recommended-ribbon">✦ AI Recommended</div>
-      )}
+      {isRecommended && <div className="recommended-ribbon">✦ AI Recommended</div>}
       <div className="route-card-header">
         <span className="route-icon">{cfg.icon}</span>
         <div>

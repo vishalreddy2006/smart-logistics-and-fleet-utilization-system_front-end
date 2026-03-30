@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://smart-logistics-and-fleet-utilization-system-bac-production.up.railway.app/api',
+  baseURL: import.meta.env.VITE_API_URL || '/api',
 });
 
 // Attach JWT token to every request
@@ -49,6 +49,7 @@ export const getAllTrips = () => api.get('/trips/all');
 export const createTrip = (trip) => api.post('/trips/create', trip);
 
 // ─── Analytics ───────────────────────────────────────────
+export const getAnalyticsSummary = () => api.get('/analytics');
 export const getMaintenanceAlerts = () => api.get('/analytics/maintenance-alerts');
 export const getTripActivity = () => api.get('/analytics/trip-activity');
 export const getFuelUsage = () => api.get('/analytics/fuel-usage');

@@ -4,74 +4,34 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
 import MetricCard from '../components/MetricCard.jsx';
-import {
-  getTripActivity,
-  getFuelUsage,
-  getProfitAnalysis,
-  getCarbonEmissions,
-  getFleetUtilization,
-  getMaintenanceAlerts,
-  getVehiclePerformance,
-} from '../api/api';
+import { getAnalyticsSummary } from '../api/api';
 
 export default function FleetAnalyticsPage() {
-  const [tripActivity, setTripActivity] = useState(null);
-  const [fuelUsage, setFuelUsage] = useState(null);
-  const [profitAnalysis, setProfitAnalysis] = useState(null);
-  const [carbonEmissions, setCarbonEmissions] = useState(null);
-  const [fleetUtilization, setFleetUtilization] = useState(null);
-  const [maintenanceAlerts, setMaintenanceAlerts] = useState([]);
-  const [vehiclePerformance, setVehiclePerformance] = useState(null);
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const fetchAll = async () => {
-      try {
-        const [ta, fu, pa, ce, flu, ma, vp] = await Promise.all([
-          getTripActivity(),
-          getFuelUsage(),
-          getProfitAnalysis(),
-          getCarbonEmissions(),
-          getFleetUtilization(),
-          getMaintenanceAlerts(),
-          getVehiclePerformance(),
-        ]);
-        setTripActivity(ta.data);
-        setFuelUsage(fu.data);
-        setProfitAnalysis(pa.data);
-        setCarbonEmissions(ce.data);
-        setFleetUtilization(flu.data);
-        setMaintenanceAlerts(ma.data);
-        setVehiclePerformance(vp.data);
-      } catch (err) {
+    getAnalyticsSummary()
+      .then((res) => setData(res.data))
+      .catch((err) => {
         setError('Failed to load analytics. Make sure the backend is running.');
         console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAll();
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   if (loading) return <div className="loading-state">⏳ Loading analytics data…</div>;
   if (error) return <div className="error-state">❌ {error}</div>;
 
-  // Chart data: tripsPerDay comes as [{label, value}]
-  const tripsChartData = (tripActivity?.tripsPerDay || []).map((d) => ({
-    day: d.label,
-    Trips: d.value,
+  const tripsChartData = (data?.dates || []).map((d, i) => ({
+    day: d,
+    Trips: data.tripsPerDay[i] ?? 0,
   }));
 
-  const fuelChartData = (fuelUsage?.fuelUsageTrend || []).map((d) => ({
-    day: d.label,
-    Fuel: d.value,
-  }));
-
-  const vehiclePerfData = (vehiclePerformance?.tripCountPerVehicle || []).map((v) => ({
-    name: `V#${v.vehicleId} ${v.vehicleType}`,
-    Trips: v.tripCount,
-    Fuel: v.fuelUsed,
+  const fuelChartData = (data?.dates || []).map((d, i) => ({
+    day: d,
+    Fuel: data.fuelTrend[i] ?? 0,
   }));
 
   return (
@@ -79,61 +39,61 @@ export default function FleetAnalyticsPage() {
       {/* ─── KPI Cards ─────────────────────────────────── */}
       <div className="metric-grid">
         <MetricCard
-          title="Trips Today"
-          value={tripActivity?.totalTripsToday}
+          title="Total Trips"
+          value={data?.totalTrips}
           icon="🗺️"
           color="blue"
-          subtitle={`Avg ${tripActivity?.averageTripDistance?.toFixed(0) ?? '—'} km/trip`}
+          subtitle={`${data?.totalDistance?.toFixed(0) ?? '—'} km total distance`}
         />
         <MetricCard
           title="Total Fuel Consumed"
-          value={fuelUsage?.totalFuelConsumed?.toFixed(1)}
+          value={data?.totalFuel?.toFixed(1)}
           unit="L"
           icon="⛽"
           color="orange"
-          subtitle={`${fuelUsage?.averageFuelPerTrip?.toFixed(1) ?? '—'} L avg/trip`}
+          subtitle={`CO₂: ${data?.totalCO2?.toFixed(1) ?? '—'} kg`}
         />
         <MetricCard
           title="Net Profit"
-          value={profitAnalysis?.netProfit?.toFixed(0)}
+          value={data?.netProfit?.toFixed(0)}
           unit="₹"
           icon="💰"
-          color={profitAnalysis?.netProfit >= 0 ? 'green' : 'red'}
-          subtitle={`Revenue ₹${profitAnalysis?.totalRevenue?.toFixed(0) ?? '—'}`}
+          color={(data?.netProfit ?? 0) >= 0 ? 'green' : 'red'}
+          subtitle={`Revenue ₹${data?.revenue?.toFixed(0) ?? '—'}`}
         />
         <MetricCard
           title="CO₂ Emission"
-          value={carbonEmissions?.totalEmission?.toFixed(1)}
+          value={data?.totalCO2?.toFixed(1)}
           unit="kg"
           icon="🌫️"
           color="red"
-          subtitle={`${carbonEmissions?.averageEmissionPerTrip?.toFixed(2) ?? '—'} kg avg/trip`}
+          subtitle={`Efficiency score: ${data?.efficiencyScore?.toFixed(1) ?? '—'}`}
         />
         <MetricCard
           title="Available Vehicles"
-          value={fleetUtilization?.availableVehicles}
+          value={data?.availableVehicles}
           icon="🚛"
           color="purple"
-          subtitle={`${fleetUtilization?.vehiclesInTrip ?? 0} in trip · ${fleetUtilization?.vehiclesUnderMaintenance ?? 0} in maint.`}
+          subtitle="ACTIVE / AVAILABLE status"
         />
         <MetricCard
           title="Maintenance Alerts"
-          value={maintenanceAlerts.length}
+          value={data?.maintenanceAlerts}
           icon="⚠️"
-          color={maintenanceAlerts.length > 0 ? 'red' : 'green'}
+          color={(data?.maintenanceAlerts ?? 0) > 0 ? 'red' : 'green'}
           subtitle={
-            maintenanceAlerts.length > 0
-              ? 'Vehicles need attention'
+            (data?.maintenanceAlerts ?? 0) > 0
+              ? 'HIGH risk vehicles need attention'
               : 'Fleet in good health'
           }
         />
       </div>
 
-      {/* ─── Charts Row 1 ───────────────────────────────── */}
+      {/* ─── Charts Row ─────────────────────────────────── */}
       <div className="charts-row">
         <div className="section-card chart-card">
           <h3 className="section-title">📈 Trips per Day (Last 7 Days)</h3>
-          {tripsChartData.length > 0 ? (
+          {tripsChartData.some((d) => d.Trips > 0) ? (
             <ResponsiveContainer width="100%" height={260}>
               <LineChart data={tripsChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -152,15 +112,13 @@ export default function FleetAnalyticsPage() {
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            <div className="chart-empty">
-              No trip data yet. Create trips to see the trend.
-            </div>
+            <div className="chart-empty">No trip data yet. Create trips to see the trend.</div>
           )}
         </div>
 
         <div className="section-card chart-card">
           <h3 className="section-title">⛽ Fuel Consumption Trend</h3>
-          {fuelChartData.length > 0 ? (
+          {fuelChartData.some((d) => d.Fuel > 0) ? (
             <ResponsiveContainer width="100%" height={260}>
               <AreaChart data={fuelChartData}>
                 <defs>
@@ -195,38 +153,25 @@ export default function FleetAnalyticsPage() {
         <div className="profit-summary-row">
           <div className="profit-stat profit-revenue">
             <span>Total Revenue</span>
-            <strong>₹{profitAnalysis?.totalRevenue?.toLocaleString('en-IN', { maximumFractionDigits: 0 }) ?? '—'}</strong>
+            <strong>₹{data?.revenue?.toLocaleString('en-IN', { maximumFractionDigits: 0 }) ?? '—'}</strong>
+          </div>
+          <div className="profit-stat profit-cost">
+            <span>Fuel Cost</span>
+            <strong>₹{data?.fuelCost?.toLocaleString('en-IN', { maximumFractionDigits: 0 }) ?? '—'}</strong>
+          </div>
+          <div className="profit-stat profit-cost">
+            <span>Maintenance Cost</span>
+            <strong>₹{data?.maintenanceCost?.toLocaleString('en-IN', { maximumFractionDigits: 0 }) ?? '—'}</strong>
           </div>
           <div className="profit-stat profit-cost">
             <span>Total Cost</span>
-            <strong>₹{profitAnalysis?.totalCost?.toLocaleString('en-IN', { maximumFractionDigits: 0 }) ?? '—'}</strong>
+            <strong>₹{data?.totalCost?.toLocaleString('en-IN', { maximumFractionDigits: 0 }) ?? '—'}</strong>
           </div>
-          <div className={`profit-stat ${(profitAnalysis?.netProfit ?? 0) >= 0 ? 'profit-pos' : 'profit-neg'}`}>
+          <div className={`profit-stat ${(data?.netProfit ?? 0) >= 0 ? 'profit-pos' : 'profit-neg'}`}>
             <span>Net Profit</span>
-            <strong>₹{profitAnalysis?.netProfit?.toLocaleString('en-IN', { maximumFractionDigits: 0 }) ?? '—'}</strong>
+            <strong>₹{data?.netProfit?.toLocaleString('en-IN', { maximumFractionDigits: 0 }) ?? '—'}</strong>
           </div>
         </div>
-      </div>
-
-      {/* ─── Vehicle Performance Chart ──────────────────── */}
-      <div className="section-card">
-        <h3 className="section-title">🚛 Trips &amp; Fuel Usage per Vehicle</h3>
-        {vehiclePerfData.length > 0 ? (
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={vehiclePerfData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-              <YAxis yAxisId="left" tick={{ fontSize: 12 }} />
-              <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} />
-              <Tooltip />
-              <Legend />
-              <Bar yAxisId="left" dataKey="Trips" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Trips" />
-              <Bar yAxisId="right" dataKey="Fuel" fill="#f59e0b" radius={[4, 4, 0, 0]} name="Fuel (L)" />
-            </BarChart>
-          </ResponsiveContainer>
-        ) : (
-          <div className="chart-empty">No vehicle performance data yet. Create trips and assign vehicles.</div>
-        )}
       </div>
     </div>
   );

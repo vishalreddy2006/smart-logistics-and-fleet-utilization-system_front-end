@@ -35,8 +35,8 @@ export default function OperationsDashboardPage() {
 			setVehicles(vRes.data);
 			setTrips(tRes.data);
 			setAlerts(aRes.data);
-		} catch (err) {
-			console.error('Failed to load dashboard data', err);
+		} catch {
+			showToast('Failed to load dashboard data.', 'error');
 		}
 	}, []);
 

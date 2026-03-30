@@ -36,9 +36,8 @@ export default function CostOptimizationPage() {
         setVehicleEfficiency(ve.data);
         setRouteEfficiency(re.data);
         setRecommendations(rec.data);
-      } catch (err) {
+      } catch {
         setError('Failed to load cost data. Make sure the backend is running.');
-        console.error(err);
       } finally {
         setLoading(false);
       }
