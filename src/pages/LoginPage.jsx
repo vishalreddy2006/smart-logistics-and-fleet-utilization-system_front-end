@@ -31,7 +31,7 @@ export default function LoginPage() {
         const res = await login(email, password);
         localStorage.setItem('token', res.data.token);
         localStorage.setItem('userEmail', email);
-        window.location.replace('/smart-logistics-and-fleet-utilization-system_front-end/#/dashboard');
+       window.location.replace('/#/dashboard');
       } else {
         await signup(email, phoneNumber, password);
         setSuccessMsg('Account created! Please sign in.');
